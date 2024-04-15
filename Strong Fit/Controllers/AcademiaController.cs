@@ -13,22 +13,14 @@ namespace Strong_Fit.Controllers
         {
             this.context = context;
         }
-
         public IActionResult Index()
         {
-            return View(context.Alunos.Include(p => p.Personal));
+            return View(context.Alunos.Include(x => x.Treinos).Include(x => x.Personal));
         }
-
         public IActionResult IndexPersonal()
         {
             return View(context.Personais);
         }
-
-        public IActionResult IndexTreino()
-        {
-            return View(context.Treinos.Include(a => a.Aluno));
-        }
-
         public IActionResult IndexExercicio()
         {
             return View(context.Exercicios);
@@ -36,57 +28,83 @@ namespace Strong_Fit.Controllers
 
         /*CRUD TREINO*/
 
-        public IActionResult CreateTreino()
+        public IActionResult CreateTreinos()
         {
-            ViewBag.AlunoId = new SelectList(context.Alunos.OrderBy(a => a.Nome), "AlunoId", "Nome");
-            ViewBag.ExercicioId = new SelectList(context.Exercicios.OrderBy(e => e.Nome), "ExercicioId", "Nome");
+            ViewBag.Alunos = new SelectList(context.Alunos.OrderBy(x => x.Nome), "AlunoId", "Nome");
+            ViewBag.Exercicios = new MultiSelectList(context.Exercicios.OrderBy(x => x.Nome), "ExercicioId", "Nome");
             return View();
         }
 
         [HttpPost]
-        public IActionResult CreateTreino(Treino treino)
+        public IActionResult CreateTreinos(Treino treino, int[] ExerciciosSelecionados)
         {
-            context.Add(treino);
+            treino.Data = DateTime.Now;
+            treino.Exercicios = new List<Exercicio>();
+            if (ExerciciosSelecionados != null)
+            {
+                foreach (var exercicioId in ExerciciosSelecionados)
+                {
+                    var exercicio = context.Exercicios.Find(exercicioId);
+                    if (exercicio != null)
+                    {
+                        treino.Exercicios.Add(exercicio);
+                    }
+                }
+            }
+
+            context.Treinos.Add(treino);
             context.SaveChanges();
-            return RedirectToAction("IndexTreino");
+
+            return RedirectToAction("Index");
         }
 
-        public IActionResult EditTreino(int id)
+        public IActionResult DeleteTreinos(int id)
         {
-            var treino = context.Treinos.Find(id);
-            ViewBag.AlunoId = new SelectList(context.Alunos.OrderBy(p => p.Nome), "AlunoId", "Nome");
-            return View(treino);
-        }
+            var treino = context.Treinos.Include(x => x.Aluno).FirstOrDefault(x => x.TreinoId == id);
 
-        [HttpPost]
-        public IActionResult EditTreino(Treino treino)
-        {
-            context.Entry(treino).State = EntityState.Modified;
+            var alunoId = treino.AlunoId;
+
+            context.Treinos.Remove(treino);
             context.SaveChanges();
-            return RedirectToAction("IndexTreino");
+            return RedirectToAction("Index", new { id = alunoId });
         }
 
         public IActionResult DetailsTreino(int id)
         {
-            var treino = context.Treinos.Include(p => p.Aluno).FirstOrDefault(p => p.AlunoId == id);
+            var treino = context.Treinos.Where(x => x.AlunoId == id).Include(x => x.Aluno).Include(x => x.Exercicios).ToList();
+            ViewBag.Aluno = context.Alunos.Find(id).Nome;
             return View(treino);
         }
 
-        public IActionResult DeleteTreino(int id)
+        public IActionResult EditTreino(int id)
         {
-            var treino = context.Treinos.Find(id);
-            ViewBag.AlunoId = new SelectList(context.Alunos.OrderBy(p => p.Nome), "AlunoId", "Nome");
+            var treino = context.Treinos.Include(x => x.Aluno).Include(x => x.Exercicios).FirstOrDefault(x => x.TreinoId == id);
+            ViewBag.Exercicios = new MultiSelectList(context.Exercicios.OrderBy(x => x.Nome), "ExercicioId", "Nome");
+
             return View(treino);
         }
 
         [HttpPost]
-        public IActionResult DeleteTreino(Treino treino)
+        public IActionResult EditTreino(int treinoId, int[] ExerciciosSelecionados)
         {
-            context.Treinos.Remove(treino);
+            var treino = context.Treinos.Include(x => x.Aluno).Include(x => x.Exercicios).FirstOrDefault(x => x.TreinoId == treinoId);
+            treino.Exercicios = null;
             context.SaveChanges();
-            return RedirectToAction("IndexTreino");
-        }
+            treino.Exercicios = new List<Exercicio>();
+            if (ExerciciosSelecionados != null)
+                foreach (var exercicioId in ExerciciosSelecionados)
+                {
+                    var exercicio = context.Exercicios.Find(exercicioId);
+                    if (exercicio != null)
+                        treino.Exercicios.Add(exercicio);
+                }
 
+            treino.Data = DateTime.Now;
+            context.SaveChanges();
+
+            return RedirectToAction("DetailsTreino", new { id = treino.AlunoId });
+        }
+        /*--------------------------------------------------------------------------------------------------------------------------*/
 
         /*CRUD EXERCICIO*/
 
@@ -94,7 +112,6 @@ namespace Strong_Fit.Controllers
         {
             return View();
         }
-
         [HttpPost]
         public IActionResult CreateExercicio(Exercicio exercicio)
         {
@@ -102,13 +119,11 @@ namespace Strong_Fit.Controllers
             context.SaveChanges();
             return RedirectToAction("IndexExercicio");
         }
-
         public IActionResult EditExercicio(int id)
         {
             var exercicio = context.Exercicios.Find(id);
             return View(exercicio);
         }
-
         [HttpPost]
         public IActionResult EditExercicio(Exercicio exercicio)
         {
@@ -116,19 +131,16 @@ namespace Strong_Fit.Controllers
             context.SaveChanges();
             return RedirectToAction("IndexExercicio");
         }
-
         public IActionResult DetailsExercicio(int id)
         {
             var exercicio = context.Exercicios.Find(id);
             return View(exercicio);
         }
-
         public IActionResult DeleteExercicio(int id)
         {
             var exercicio = context.Exercicios.Find(id);
             return View(exercicio);
         }
-
         [HttpPost]
         public IActionResult DeleteExercicio(Exercicio exercicio)
         {
@@ -136,13 +148,13 @@ namespace Strong_Fit.Controllers
             context.SaveChanges();
             return RedirectToAction("IndexExercicio");
         }
+        /*--------------------------------------------------------------------------------------------------------------------------*/
 
         /*CRUD PERSONAL*/
         public IActionResult CreatePersonal()
         {
             return View();
         }
-
         [HttpPost]
         public IActionResult CreatePersonal(Personal personal) 
         {
@@ -150,13 +162,11 @@ namespace Strong_Fit.Controllers
             context.SaveChanges();
             return RedirectToAction("IndexPersonal");
         }
-
         public IActionResult EditPersonal(int id)
         {
             var personal = context.Personais.Find(id);
             return View(personal);
         }
-
         [HttpPost]
         public IActionResult EditPersonal(Personal personal)
         {
@@ -164,19 +174,16 @@ namespace Strong_Fit.Controllers
             context.SaveChanges();
             return RedirectToAction("IndexPersonal");
         }
-
         public IActionResult DetailsPersonal(int id)
         {
             var personal = context.Personais.Find(id);
             return View(personal);
         }
-
         public IActionResult DeletePersonal(int id)
         {
             var personal = context.Personais.Find(id);
             return View(personal);
         }
-
         [HttpPost]
         public IActionResult DeletePersonal(Personal personal)
         {
@@ -184,6 +191,7 @@ namespace Strong_Fit.Controllers
             context.SaveChanges();
             return RedirectToAction("IndexPersonal");
         }
+        /*--------------------------------------------------------------------------------------------------------------------------*/
 
         /*CRUD ALUNOS*/
         public IActionResult CreateAlunos()
@@ -191,7 +199,6 @@ namespace Strong_Fit.Controllers
             ViewBag.PersonalId = new SelectList(context.Personais.OrderBy(p => p.Nome), "PersonalId", "Nome"); 
             return View();
         }
-
         [HttpPost]
         public IActionResult CreateAlunos(Aluno Aluno)
         {
@@ -199,14 +206,12 @@ namespace Strong_Fit.Controllers
             context.SaveChanges();
             return RedirectToAction("Index");
         }
-
         public IActionResult EditAluno(int id) 
         {
             var aluno = context.Alunos.Find(id);
             ViewBag.PersonalId = new SelectList(context.Personais.OrderBy(p => p.Nome), "PersonalId", "Nome");
             return View(aluno);
         }
-
         [HttpPost]
         public IActionResult EditAluno(Aluno aluno)
         {
@@ -214,20 +219,17 @@ namespace Strong_Fit.Controllers
             context.SaveChanges();
             return RedirectToAction("Index");
         }
-
         public IActionResult DetailsAlunos(int id)
         {
             var aluno = context.Alunos.Include(p => p.Personal).FirstOrDefault(p => p.PersonalId == id);
             return View(aluno);
         }
-
         public IActionResult DeleteAluno(int id)
         {
             var aluno = context.Alunos.Find(id);
             ViewBag.PersonalId = new SelectList(context.Personais.OrderBy(p => p.Nome), "PersonalId", "Nome");
             return View(aluno);
         }
-
         [HttpPost]
         public IActionResult DeleteAluno(Aluno aluno)
         {
@@ -236,8 +238,7 @@ namespace Strong_Fit.Controllers
             return RedirectToAction("Index");
         }
 
-
-        /*CRUD VINCULO TREINO COM EXERCICIO*/
+        /*--------------------------------------------------------------------------------------------------------------------------*/
 
 
 

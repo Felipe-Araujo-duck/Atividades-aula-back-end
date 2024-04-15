@@ -4,41 +4,45 @@
     ViewData["Title"] = "EditTreino";
 }
 
-<h1>EditTreino</h1>
+<dl class="row">
+    <dt class="col-sm-2">
+        Nome do Aluno
+    </dt>
 
-<h4>Treino</h4>
-<hr />
-<div class="row">
-    <div class="col-md-4">
-        <form asp-action="EditTreino">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <input type="hidden" asp-for="TreinoId" />
-            <div class="form-group">
-                <label asp-for="AlunoId" class="control-label"></label>
-                <select asp-for="AlunoId" class="form-control" asp-items="ViewBag.AlunoId"></select>
-                <span asp-validation-for="AlunoId" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Data" class="control-label"></label>
-                <input asp-for="Data" class="form-control" />
-                <span asp-validation-for="Data" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Hora" class="control-label"></label>
-                <input asp-for="Hora" class="form-control" />
-                <span asp-validation-for="Hora" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <input type="submit" value="Save" class="btn btn-primary" />
-            </div>
-        </form>
+    <dd class="col-sm-10">
+        @Model.Aluno.Nome
+    </dd>
+</dl>
+
+<form method="post">
+    <div class="form-group">
+        <label>Exercícios:</label>
+        @{
+
+            foreach (var item in ViewBag.Exercicios as MultiSelectList)
+            {
+                bool isChecked = false;
+                var exercicio = Model.Exercicios.FirstOrDefault(e => e.ExercicioId.ToString().Equals(item.Value));
+                if (exercicio != null)
+                    isChecked = true;
+
+
+
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="ExerciciosSelecionados" value="@item.Value" @(isChecked ? "checked" : "")>
+                    <label class="form-check-label" )">
+                        @item.Text
+                    </label>
+                </div>
+            }
+        }
     </div>
-</div>
-
-<div>
-    <a asp-action="Index">Back to List</a>
-</div>
+    <input type="hidden" asp-for="@Model.TreinoId" />
+    <button type="submit" class="btn btn-primary">Editar Treino</button>
+</form>
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
 }
