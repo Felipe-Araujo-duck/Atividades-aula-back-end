@@ -1,0 +1,47 @@
+﻿@model IEnumerable<Strong_Fit.Models.Exercicio>
+
+@{
+    ViewData["Title"] = "IndexExercicio";
+}
+
+<h1>IndexExercicio</h1>
+
+<p>
+    <a asp-action="CreateExercicio">Create New</a>
+</p>
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.Nome)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Categoria)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Descricao)
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+@foreach (var item in Model) {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.Nome)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Categoria)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Descricao)
+            </td>
+            <td>
+                <a asp-action="EditExercicio" asp-route-id="@item.ExercicioId">Edit</a> |
+                <a asp-action="DetailsExercicio" asp-route-id="@item.ExercicioId">Details</a> |
+                <a asp-action="DeleteExercicio" asp-route-id="@item.ExercicioId">Delete</a>
+            </td>
+        </tr>
+}
+    </tbody>
+</table>
